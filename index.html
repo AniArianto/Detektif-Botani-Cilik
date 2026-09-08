@@ -1,0 +1,1416 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Petualangan Tumbuhan! - Game Edukasi Kelas 4 SD</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            font-family: 'Fredoka', 'Nunito', sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body {
+            background: linear-gradient(135deg, #a8e063 0%, #56ab2f 100%);
+            min-height: 100vh;
+        }
+
+        /* Animated Background Floating Elements */
+        .bg-leaves {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
+        }
+
+        .leaf {
+            position: absolute;
+            font-size: 2rem;
+            animation: float 12s infinite linear;
+            opacity: 0.25;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(105vh) rotate(0deg); }
+            100% { transform: translateY(-10vh) rotate(360deg); }
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(8px);
+            border: 4px solid #81c784;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            border-radius: 1.75rem;
+        }
+
+        .btn-green {
+            background: linear-gradient(180deg, #66bb6a 0%, #388e3c 100%);
+            box-shadow: 0 6px 0 #1b5e20, 0 10px 15px rgba(0,0,0,0.2);
+            transition: all 0.15s ease;
+        }
+
+        .btn-green:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 0 #1b5e20, 0 12px 20px rgba(0,0,0,0.25);
+        }
+
+        .btn-green:active {
+            transform: translateY(4px);
+            box-shadow: 0 2px 0 #1b5e20, 0 4px 6px rgba(0,0,0,0.2);
+        }
+
+        .btn-orange {
+            background: linear-gradient(180deg, #ffa726 0%, #f57c00 100%);
+            box-shadow: 0 6px 0 #e65100, 0 10px 15px rgba(0,0,0,0.2);
+            transition: all 0.15s ease;
+        }
+
+        .btn-orange:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 0 #e65100;
+        }
+
+        .btn-orange:active {
+            transform: translateY(4px);
+            box-shadow: 0 2px 0 #e65100;
+        }
+
+        .btn-blue {
+            background: linear-gradient(180deg, #42a5f5 0%, #1976d2 100%);
+            box-shadow: 0 6px 0 #0d47a1, 0 10px 15px rgba(0,0,0,0.2);
+            transition: all 0.15s ease;
+        }
+
+        .btn-blue:hover { transform: translateY(-2px); box-shadow: 0 8px 0 #0d47a1; }
+        .btn-blue:active { transform: translateY(4px); box-shadow: 0 2px 0 #0d47a1; }
+
+        /* Drag & Drop Visuals */
+        .drop-zone {
+            transition: all 0.2s ease;
+            min-height: 110px;
+        }
+
+        .drop-zone.drag-over {
+            background-color: #e8f5e9;
+            border-color: #2e7d32;
+            transform: scale(1.02);
+        }
+
+        .draggable-item {
+            cursor: grab;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+            touch-action: none;
+        }
+
+        .draggable-item:active {
+            cursor: grabbing;
+        }
+
+        .draggable-item.selected {
+            ring: 4px;
+            ring-color: #fbbf24;
+            transform: scale(1.05);
+            background-color: #fef3c7;
+        }
+
+        /* Pair Matching Visuals */
+        .match-card {
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .match-card.selected {
+            border-color: #f59e0b;
+            background-color: #fef3c7;
+            transform: scale(1.03);
+            box-shadow: 0 0 15px rgba(245, 158, 11, 0.4);
+        }
+
+        .match-card.matched {
+            border-color: #10b981;
+            background-color: #d1fae5;
+            opacity: 0.8;
+            pointer-events: none;
+        }
+
+        .match-card.wrong {
+            animation: shake 0.4s ease-in-out;
+            border-color: #ef4444;
+            background-color: #fee2e2;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-8px); }
+            40%, 80% { transform: translateX(8px); }
+        }
+
+        /* Pulse Badge */
+        .turn-active {
+            animation: pulse-turn 1.5s infinite;
+        }
+
+        @keyframes pulse-turn {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.03); }
+        }
+
+        /* Confetti Canvas */
+        #confettiCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 50;
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-3 md:p-6 text-gray-800 relative overflow-x-hidden">
+
+    <!-- Canvas for Confetti Effect -->
+    <canvas id="confettiCanvas"></canvas>
+
+    <!-- Floating Background Leaves -->
+    <div class="bg-leaves" id="leavesContainer"></div>
+
+    <!-- Main Container Wrapper -->
+    <div class="w-full max-w-3xl z-10 relative">
+
+        <!-- ================= WELCOME SCREEN ================= -->
+        <div id="welcomeCard" class="card p-6 md:p-10 text-center">
+            <div class="text-6xl md:text-7xl mb-3 animate-bounce">🌱🌻🌳</div>
+            <h1 class="text-3xl md:text-5xl font-black text-green-800 tracking-wide mb-2">
+                Petualangan Tumbuhan!
+            </h1>
+            <p class="text-base md:text-xl font-bold text-green-700 mb-6">
+                Game Edukasi Perkembangbiakan Tumbuhan
+            </p>
+
+            <div class="bg-green-100 border-2 border-green-300 rounded-2xl p-4 mb-8 text-left max-w-md mx-auto text-green-900 text-sm md:text-base">
+                <p class="font-bold text-center text-green-800 text-base md:text-lg mb-1">🎓 Untuk Siswa Kelas 4 SD</p>
+                <ul class="list-disc list-inside space-y-1">
+                    <li>Kuis pilihan ganda interaktif ❓</li>
+                    <li>Klasifikasi drag-and-drop 🌱</li>
+                    <li>Mencocokkan pasangan tepat 🔗</li>
+                </ul>
+            </div>
+
+            <h3 class="text-xl md:text-2xl font-bold text-gray-700 mb-4">👥 Pilih Mode Permainan</h3>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-md mx-auto">
+                <button onclick="chooseMode(1)" class="btn-green text-white text-xl font-black py-4 px-6 rounded-2xl flex items-center justify-center space-x-2">
+                    <span class="text-2xl">👤</span>
+                    <span>1 Pemain</span>
+                </button>
+                <button onclick="chooseMode(2)" class="btn-orange text-white text-xl font-black py-4 px-6 rounded-2xl flex items-center justify-center space-x-2">
+                    <span class="text-2xl">👥</span>
+                    <span>2 Pemain</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- ================= SETUP SCREEN ================= -->
+        <div id="setupCard" class="card p-6 md:p-10 text-center hidden">
+            <div class="text-6xl mb-3">📝🌱</div>
+            <h2 class="text-2xl md:text-4xl font-black text-green-800 mb-4">Masukkan Nama Pemain</h2>
+
+            <div id="playerInputs" class="space-y-4 max-w-md mx-auto mb-8">
+                <!-- Inputs populated dynamically -->
+            </div>
+
+            <div class="flex justify-center space-x-3">
+                <button onclick="showWelcome()" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-3 px-6 rounded-2xl text-lg transition">
+                    ⬅️ Kembali
+                </button>
+                <button onclick="startGame()" class="btn-green text-white font-black py-3 px-8 rounded-2xl text-xl">
+                    🚀 Mulai Main!
+                </button>
+            </div>
+        </div>
+
+        <!-- ================= GAME CONTAINER ================= -->
+        <div id="gameContainer" class="hidden space-y-4">
+
+            <!-- TURN BANNER (For 2 Player mode) -->
+            <div id="turnBanner" class="turn-banner bg-amber-400 border-4 border-amber-600 rounded-2xl p-3 text-center text-amber-950 font-black text-xl md:text-2xl shadow-lg hidden turn-active">
+                🎯 Giliran: <span id="activePlayerName" class="underline">Pemain 1</span>
+            </div>
+
+            <!-- HUD HEADER -->
+            <div class="grid grid-cols-3 gap-2 md:gap-4">
+                <div id="scoreBoard" class="bg-white/90 border-2 border-green-400 rounded-2xl p-2 md:p-3 text-center shadow">
+                    <!-- Dynamic score info -->
+                </div>
+                <div class="bg-white/90 border-2 border-amber-400 rounded-2xl p-2 md:p-3 text-center shadow flex flex-col justify-center">
+                    <div class="text-xs text-amber-700 font-bold">⏱️ WAKTU</div>
+                    <div id="timer" class="text-xl md:text-2xl font-black text-amber-900">00:00</div>
+                </div>
+                <div class="bg-white/90 border-2 border-blue-400 rounded-2xl p-2 md:p-3 text-center shadow flex flex-col justify-center">
+                    <div class="text-xs text-blue-700 font-bold">SOAL</div>
+                    <div class="text-lg md:text-xl font-black text-blue-900">
+                        <span id="questionNumber">1</span> / <span id="totalQuestions">8</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MAIN GAME QUESTION CARD -->
+            <div class="card p-5 md:p-8">
+                <!-- Question Title / Prompt -->
+                <div class="flex items-center space-x-2 mb-4 border-b-2 border-green-100 pb-3">
+                    <span class="text-2xl">🌱</span>
+                    <h2 id="gameTitle" class="text-lg md:text-2xl font-bold text-green-900">
+                        Tantangan Tumbuhan
+                    </h2>
+                </div>
+
+                <!-- Dynamic Question Content -->
+                <div id="gameContent" class="mb-6">
+                    <!-- Loaded dynamically via JS -->
+                </div>
+
+                <!-- Interactive Feedback Banner -->
+                <div id="feedback" class="hidden p-4 rounded-2xl font-bold text-center text-lg mb-4 transition-all">
+                    <!-- Feedback text -->
+                </div>
+
+                <!-- Action / Next Button -->
+                <div class="flex justify-end">
+                    <button id="nextBtn" onclick="nextQuestion()" class="btn-green text-white font-black text-lg md:text-xl py-3 px-8 rounded-2xl hidden">
+                        Lanjut ➡️
+                    </button>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- ================= RESULT SCREEN ================= -->
+        <div id="resultCard" class="card p-6 md:p-10 text-center hidden">
+            <div class="text-6xl md:text-7xl mb-2 animate-bounce">🏆</div>
+            <h2 class="text-3xl md:text-5xl font-black text-green-800 mb-2">Permainan Selesai!</h2>
+
+            <div id="winnerText" class="text-xl md:text-3xl font-black text-amber-600 mb-6">
+                <!-- Winner announcement -->
+            </div>
+
+            <!-- Stats grid -->
+            <div class="grid grid-cols-2 gap-4 max-w-md mx-auto mb-6">
+                <div class="bg-yellow-100 border-2 border-yellow-300 rounded-2xl p-4">
+                    <div class="text-3xl md:text-4xl font-black text-yellow-800" id="finalScore">0</div>
+                    <div class="text-sm font-bold text-yellow-700">⭐ Total Skor (Maks 1.000)</div>
+                </div>
+                <div class="bg-blue-100 border-2 border-blue-300 rounded-2xl p-4">
+                    <div class="text-3xl md:text-4xl font-black text-blue-800" id="finalTime">00:00</div>
+                    <div class="text-sm font-bold text-blue-700">⏱️ Total Waktu</div>
+                </div>
+            </div>
+
+            <div class="mb-6 flex justify-center">
+                <button onclick="openCertificateModal()" class="btn-blue text-white font-black text-lg py-3 px-8 rounded-2xl flex items-center space-x-2">
+                    <span>📜</span>
+                    <span>Lihat & Unduh Sertifikat</span>
+                </button>
+            </div>
+
+            <!-- Player comparison (for 2P mode) -->
+            <div id="playerComparison" class="max-w-md mx-auto mb-6 space-y-2 text-left hidden">
+                <!-- Populated in JS -->
+            </div>
+
+            <!-- Educational Recap -->
+            <div class="bg-green-100 border-2 border-green-400 rounded-2xl p-4 text-left max-w-lg mx-auto mb-8 text-green-900 text-sm md:text-base">
+                <div class="font-bold text-green-800 text-center text-base md:text-lg mb-1">🌱 Rangkuman Materi SD Kelas 4:</div>
+                <p>Tumbuhan berkembang biak dengan dua cara utama:</p>
+                <ul class="list-disc list-inside mt-1 space-y-1">
+                    <li><b>Generatif (Kawin):</b> Menggunakan biji melalui penyerbukan serbuk sari & putik. Contoh: Mangga, Jagung, Bunga Sepatu.</li>
+                    <li><b>Vegetatif (Tak Kawin):</b>
+                        <ul class="list-circle list-inside pl-4 text-xs md:text-sm">
+                            <li><i>Alami:</i> Tunas (Pisang), Umbi (Bawang, Kentang), Spora (Paku), Geragih (Stroberi).</li>
+                            <li><i>Buatan:</i> Bantuan manusia (Cangkok, Stek, Okulasi).</li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+
+            <button onclick="restartGame()" class="btn-green text-white font-black text-xl py-4 px-10 rounded-2xl shadow-lg">
+                🔄 Bermain Lagi
+            </button>
+        </div>
+
+        <!-- ================= CERTIFICATE MODAL ================= -->
+        <div id="certModal" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-3 hidden overflow-y-auto">
+            <div class="bg-white rounded-3xl p-5 md:p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl relative border-4 border-green-500">
+                <button onclick="closeCertificateModal()" class="absolute top-4 right-4 text-gray-500 hover:text-gray-800 text-2xl font-black">&times;</button>
+                
+                <div class="text-center mb-4">
+                    <span class="text-4xl">📜🌱</span>
+                    <h3 class="text-2xl font-black text-green-800">Cetak Sertifikat Kelulusan</h3>
+                    <p class="text-sm text-gray-600 font-bold">Lengkapi data di bawah ini untuk mengunduh sertifikat resmi!</p>
+                </div>
+
+                <!-- Certificate Form Controls -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-left mb-4 text-sm font-bold">
+                    <div id="certPlayerSelectContainer" class="md:col-span-2 hidden">
+                        <label class="block text-gray-700 mb-1">Pilih Pemain:</label>
+                        <select id="certPlayerSelect" onchange="updateCertificatePreview()" class="w-full p-2 border-2 border-green-300 rounded-xl focus:outline-none focus:border-green-600">
+                            <!-- Populated dynamically -->
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 mb-1">Nama Sekolah:</label>
+                        <input type="text" id="certSchool" value="SD Negeri 1 Merdeka" oninput="updateCertificatePreview()" class="w-full p-2 border-2 border-green-300 rounded-xl focus:outline-none focus:border-green-600">
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 mb-1">Kota & Tanggal Sertifikat:</label>
+                        <input type="text" id="certCityDate" value="Semarang, 8 September 2026" oninput="updateCertificatePreview()" class="w-full p-2 border-2 border-green-300 rounded-xl focus:outline-none focus:border-green-600">
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 mb-1">Nama Guru Kelas:</label>
+                        <input type="text" id="certTeacherName" value="Budi Santoso, S.Pd." oninput="updateCertificatePreview()" class="w-full p-2 border-2 border-green-300 rounded-xl focus:outline-none focus:border-green-600">
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 mb-1">NIP Guru Kelas:</label>
+                        <input type="text" id="certTeacherNIP" value="19850101 201001 1 001" oninput="updateCertificatePreview()" class="w-full p-2 border-2 border-green-300 rounded-xl focus:outline-none focus:border-green-600">
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 mb-1">Nama Kepala Sekolah:</label>
+                        <input type="text" id="certPrincipalName" value="Siti Rahayu, M.Pd." oninput="updateCertificatePreview()" class="w-full p-2 border-2 border-green-300 rounded-xl focus:outline-none focus:border-green-600">
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 mb-1">NIP Kepala Sekolah:</label>
+                        <input type="text" id="certPrincipalNIP" value="19720315 199503 2 002" oninput="updateCertificatePreview()" class="w-full p-2 border-2 border-green-300 rounded-xl focus:outline-none focus:border-green-600">
+                    </div>
+                </div>
+
+                <!-- Canvas Certificate Preview -->
+                <div class="mb-4 overflow-x-auto border-2 border-gray-300 rounded-xl shadow-inner bg-gray-50 p-2 flex justify-center">
+                    <canvas id="certCanvas" width="1000" height="700" class="max-w-full h-auto rounded-lg shadow-md"></canvas>
+                </div>
+
+                <!-- Modal Action Buttons -->
+                <div class="flex flex-wrap justify-center gap-3">
+                    <button onclick="downloadCertificate()" class="btn-green text-white font-black py-3 px-6 rounded-2xl flex items-center space-x-2">
+                        <span>📥</span>
+                        <span>Unduh Sertifikat (PNG)</span>
+                    </button>
+                    <button onclick="printCertificate()" class="btn-orange text-white font-black py-3 px-6 rounded-2xl flex items-center space-x-2">
+                        <span>🖨️</span>
+                        <span>Cetak / PDF</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- JavaScript Logic -->
+    <script>
+        // Web Audio API Synthesizer for lightweight native sound effects
+        const sound = {
+            ctx: null,
+            init() {
+                if (!this.ctx) {
+                    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+            },
+            playClick() {
+                try {
+                    this.init();
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(400, this.ctx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(800, this.ctx.currentTime + 0.05);
+                    gain.gain.setValueAtTime(0.15, this.ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.05);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start();
+                    osc.stop(this.ctx.currentTime + 0.05);
+                } catch(e) {}
+            },
+            playCorrect() {
+                try {
+                    this.init();
+                    const now = this.ctx.currentTime;
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(523.25, now);
+                    osc.frequency.setValueAtTime(659.25, now + 0.1);
+                    osc.frequency.setValueAtTime(783.99, now + 0.2);
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.4);
+                } catch(e) {}
+            },
+            playWrong() {
+                try {
+                    this.init();
+                    const now = this.ctx.currentTime;
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(220, now);
+                    osc.frequency.setValueAtTime(160, now + 0.15);
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.35);
+                } catch(e) {}
+            },
+            playWin() {
+                try {
+                    this.init();
+                    const notes = [523.25, 659.25, 783.99, 1046.50];
+                    notes.forEach((freq, i) => {
+                        const osc = this.ctx.createOscillator();
+                        const gain = this.ctx.createGain();
+                        const now = this.ctx.currentTime + i * 0.12;
+                        osc.type = 'triangle';
+                        osc.frequency.setValueAtTime(freq, now);
+                        gain.gain.setValueAtTime(0.25, now);
+                        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                        osc.connect(gain);
+                        gain.connect(this.ctx.destination);
+                        osc.start(now);
+                        osc.stop(now + 0.3);
+                    });
+                } catch(e) {}
+            }
+        };
+
+        // Game State Variables
+        let playerMode = 1;
+        let players = [];
+        let currentTurnIndex = 0;
+        let currentQuestionIdx = 0;
+        let secondsElapsed = 0;
+        let timerInterval = null;
+        let questions = [];
+        let dragSelectedItem = null;
+        let matchSelectedLeft = null;
+        let currentMatchedCount = 0;
+
+        // Educational Question Database (Expanded to 10 Questions for 1,000 Points Max)
+        const questionBank = [
+            {
+                type: 'mcq',
+                title: 'Kuis Pilihan Ganda ❓',
+                prompt: 'Proses jatuhnya serbuk sari ke kepala putik pada bunga disebut...',
+                options: ['Penyerbukan', 'Fotosintesis', 'Cangkok', 'Sprouting'],
+                answer: 0,
+                explanation: 'Penyerbukan adalah perkawinan pada tumbuhan generatif ketika serbuk sari jatuh ke kepala putik.'
+            },
+            {
+                type: 'mcq',
+                title: 'Kuis Pilihan Ganda ❓',
+                prompt: 'Pohon pisang dan bambu berkembang biak secara vegetatif alami menggunakan...',
+                options: ['Biji', 'Tunas', 'Spora', 'Geragih'],
+                answer: 1,
+                explanation: 'Pohon pisang menghasilkan tunas kecil di sekitar batang induknya untuk berkembang biak.'
+            },
+            {
+                type: 'mcq',
+                title: 'Kuis Pilihan Ganda ❓',
+                prompt: 'Tumbuhan paku dan lumut berkembang biak dengan bantuan...',
+                options: ['Umbi Lapis', 'Spora', 'Stek Batang', 'Bunga'],
+                answer: 1,
+                explanation: 'Spora adalah sel khusus pembeli keturunan pada tumbuhan paku dan lumut yang disimpan di kotak spora (sporangium).'
+            },
+            {
+                type: 'mcq',
+                title: 'Kuis Pilihan Ganda ❓',
+                prompt: 'Perkembangbiakan vegetatif buatan yang dilakukan dengan mengupas kulit batang lalu membungkusnya dengan tanah adalah...',
+                options: ['Stek', 'Cangkok', 'Okulasi', 'Merunduk'],
+                answer: 1,
+                explanation: 'Mencangkok dilakukan pada tumbuhan berkayu agar tumbuh akar baru pada bagian batang yang dibungkus tanah.'
+            },
+            {
+                type: 'dragdrop',
+                title: 'Klasifikasi Perkembangbiakan 🌱',
+                prompt: 'Kelompokkan tumbuhan/metode di bawah ini ke dalam kategori yang tepat!',
+                categories: [
+                    { id: 'generatif', title: '🌸 Generatif (Biji)' },
+                    { id: 'vegetatif_alami', title: '🌿 Vegetatif Alami' },
+                    { id: 'vegetatif_buatan', title: '✂️ Vegetatif Buatan' }
+                ],
+                items: [
+                    { id: 'i1', text: 'Pohon Mangga', category: 'generatif' },
+                    { id: 'i2', text: 'Bawang Merah (Umbi)', category: 'vegetatif_alami' },
+                    { id: 'i3', text: 'Cangkok Dahan', category: 'vegetatif_buatan' },
+                    { id: 'i4', text: 'Jagung', category: 'generatif' },
+                    { id: 'i5', text: 'Stroberi (Geragih)', category: 'vegetatif_alami' },
+                    { id: 'i6', text: 'Stek Batang Singkong', category: 'vegetatif_buatan' }
+                ]
+            },
+            {
+                type: 'matching',
+                title: 'Jodohkan Pasangan 🔗',
+                prompt: 'Hubungkan antara nama tumbuhan dengan cara berkembang biaknya!',
+                pairs: [
+                    { left: '🌱 Tumbuhan Paku', right: 'Spora' },
+                    { left: '🧅 Bawang Merah', right: 'Umbi Lapis' },
+                    { left: '🍓 Stroberi', right: 'Geragih (Stolon)' },
+                    { left: '🥔 Kentang', right: 'Umbi Batang' }
+                ]
+            },
+            {
+                type: 'mcq',
+                title: 'Kuis Pilihan Ganda ❓',
+                prompt: 'Contoh tumbuhan yang berkembang biak dengan umbi lapis adalah...',
+                options: ['Bawang Merah & Bawang Putih', 'Wortel & Singkong', 'Pisang & Bambu', 'Mangga & Jeruk'],
+                answer: 0,
+                explanation: 'Bawang merah dan bawang putih memiliki pelepah daun berlapis-lapis yang menyimpan cadangan makanan.'
+            },
+            {
+                type: 'dragdrop',
+                title: 'Kelompokkan Jenis Vegetatif Alami 🍃',
+                prompt: 'Tarik / Sentuh tumbuhan lalu masukkan ke jenis vegetatif alaminya!',
+                categories: [
+                    { id: 'tunas', title: '🌱 Tunas' },
+                    { id: 'umbi', title: '🧅 / 🥔 Umbi' }
+                ],
+                items: [
+                    { id: 'item1', text: 'Pohon Pisang', category: 'tunas' },
+                    { id: 'item2', text: 'Tunas Bambu', category: 'tunas' },
+                    { id: 'item3', text: 'Wortel', category: 'umbi' },
+                    { id: 'item4', text: 'Kentang', category: 'umbi' }
+                ]
+            },
+            {
+                type: 'mcq',
+                title: 'Kuis Pilihan Ganda ❓',
+                prompt: 'Tumbuhan rumput teki dan pegagan berkembang biak secara vegetatif alami dengan batang yang menjalar di atas tanah, yaitu...',
+                options: ['Geragih (Stolon)', 'Umbi Akar', 'Tunas Sekunder', 'Stek'],
+                answer: 0,
+                explanation: 'Geragih atau stolon adalah batang yang menjalar di atas atau di bawah permukaan tanah untuk membentuk individu baru.'
+            },
+            {
+                type: 'mcq',
+                title: 'Kuis Pilihan Ganda ❓',
+                prompt: 'Penyerbukan bunga yang dibantu oleh hewan serangga seperti lebah dan kupu-kupu dinamakan penyerbukan...',
+                options: ['Zoidiogami', 'Anemogami', 'Hidrogami', 'Antropogami'],
+                answer: 0,
+                explanation: 'Penyerbukan dengan bantuan hewan dipanggil zoidiogami, di mana serangga membantu memindahkan serbuk sari.'
+            }
+        ];
+
+        // Game State Variables
+        // Evaluation Predicate & Title Function
+        function getPredicateInfo(score) {
+            if (score <= 200) {
+                return { predicate: 'Sangat Kurang', title: '' };
+            } else if (score <= 400) {
+                return { predicate: 'Kurang', title: '' };
+            } else if (score <= 600) {
+                return { predicate: 'Cukup', title: '' };
+            } else if (score <= 800) {
+                return { predicate: 'Baik', title: 'Peneliti Botani Junior' };
+            } else {
+                return { predicate: 'Sangat Baik', title: 'Peneliti Botani Senior' };
+            }
+        }
+
+        // Open Certificate Modal
+        function openCertificateModal() {
+            sound.playClick();
+            const modal = document.getElementById('certModal');
+            const playerSelectContainer = document.getElementById('certPlayerSelectContainer');
+            const playerSelect = document.getElementById('certPlayerSelect');
+
+            if (playerMode === 2) {
+                playerSelectContainer.classList.remove('hidden');
+                playerSelect.innerHTML = players.map((p, idx) => `<option value="${idx}">${p.name} (Skor: ${p.score})</option>`).join('');
+            } else {
+                playerSelectContainer.classList.add('hidden');
+            }
+
+            modal.classList.remove('hidden');
+            updateCertificatePreview();
+        }
+
+        function closeCertificateModal() {
+            sound.playClick();
+            document.getElementById('certModal').classList.add('hidden');
+        }
+
+        // Draw Certificate on HTML Canvas
+        function updateCertificatePreview() {
+            const canvas = document.getElementById('certCanvas');
+            const ctx = canvas.getContext('2d');
+
+            // Select active player
+            let activeIdx = 0;
+            if (playerMode === 2) {
+                activeIdx = parseInt(document.getElementById('certPlayerSelect').value) || 0;
+            }
+            const player = players[activeIdx] || { name: 'Pemain 1', score: 0 };
+            const predInfo = getPredicateInfo(player.score);
+
+            const schoolName = document.getElementById('certSchool').value || 'SD Negeri 1 Merdeka';
+            const cityDate = document.getElementById('certCityDate').value || 'Semarang, 8 September 2026';
+            const teacherName = document.getElementById('certTeacherName').value || 'Budi Santoso, S.Pd.';
+            const teacherNIP = document.getElementById('certTeacherNIP').value || 'NIP. 19850101 201001 1 001';
+            const principalName = document.getElementById('certPrincipalName').value || 'Siti Rahayu, M.Pd.';
+            const principalNIP = document.getElementById('certPrincipalNIP').value || 'NIP. 19720315 199503 2 002';
+
+            // Clear Background
+            ctx.fillStyle = '#FCFDF9';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Outer Fancy Border
+            ctx.strokeStyle = '#2e7d32';
+            ctx.lineWidth = 12;
+            ctx.strokeRect(20, 20, canvas.width - 40, canvas.height - 40);
+
+            ctx.strokeStyle = '#f59e0b';
+            ctx.lineWidth = 4;
+            ctx.strokeRect(32, 32, canvas.width - 64, canvas.height - 64);
+
+            // Leaf Embellishment Corners
+            ctx.font = '28px sans-serif';
+            ctx.fillStyle = '#2e7d32';
+            ctx.fillText('🌿', 45, 65);
+            ctx.fillText('🌿', canvas.width - 75, 65);
+            ctx.fillText('🌿', 45, canvas.height - 45);
+            ctx.fillText('🌿', canvas.width - 75, canvas.height - 45);
+
+            // Header Ribbon / Title
+            ctx.textAlign = 'center';
+            ctx.fillStyle = '#1b5e20';
+            ctx.font = 'bold 36px "Fredoka", sans-serif';
+            ctx.fillText('SERTIFIKAT PENGHARGAAN', canvas.width / 2, 110);
+
+            ctx.fillStyle = '#d97706';
+            ctx.font = 'bold 18px "Fredoka", sans-serif';
+            ctx.fillText('PETUALANGAN TUMBUHAN - KELAS 4 SD', canvas.width / 2, 140);
+
+            ctx.strokeStyle = '#a8e063';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(canvas.width / 2 - 180, 152);
+            ctx.lineTo(canvas.width / 2 + 180, 152);
+            ctx.stroke();
+
+            // Subtitle
+            ctx.fillStyle = '#374151';
+            ctx.font = '18px "Fredoka", sans-serif';
+            ctx.fillText('Diberikan kepada:', canvas.width / 2, 195);
+
+            // Student Name
+            ctx.fillStyle = '#15803d';
+            ctx.font = 'bold 42px "Fredoka", sans-serif';
+            ctx.fillText(player.name, canvas.width / 2, 245);
+
+            // Description Body
+            ctx.fillStyle = '#1f2937';
+            ctx.font = '16px "Fredoka", sans-serif';
+            ctx.fillText(`Atas partisipasi dan keberhasilannya menyelesaikan materi pembelajaran`, canvas.width / 2, 290);
+            ctx.fillText(`Perkembangbiakan Tumbuhan di ${schoolName}`, canvas.width / 2, 315);
+
+            // Score & Predicate Box
+            ctx.fillStyle = '#f0fdf4';
+            ctx.strokeStyle = '#86efac';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.roundRect(canvas.width / 2 - 260, 345, 520, 125, 16);
+            ctx.fill();
+            ctx.stroke();
+
+            // Inside Score Box
+            ctx.fillStyle = '#166534';
+            ctx.font = 'bold 22px "Fredoka", sans-serif';
+            ctx.fillText(`Skor: ${player.score} / 1.000   |   Predikat: ${predInfo.predicate}`, canvas.width / 2, 385);
+
+            if (predInfo.title) {
+                ctx.fillStyle = '#b45309';
+                ctx.font = 'bold 20px "Fredoka", sans-serif';
+                ctx.fillText(`🏅 Gelar: "${predInfo.title}"`, canvas.width / 2, 425);
+            } else {
+                ctx.fillStyle = '#4b5563';
+                ctx.font = 'italic 16px "Fredoka", sans-serif';
+                ctx.fillText(`Tetap Semangat Belajar Tumbuhan! 🌱`, canvas.width / 2, 425);
+            }
+
+            // Date
+            ctx.fillStyle = '#374151';
+            ctx.font = '16px "Fredoka", sans-serif';
+            ctx.fillText(cityDate, canvas.width - 220, 520);
+
+            // Signatures Section
+            // Teacher (Left)
+            ctx.textAlign = 'center';
+            ctx.fillText('Guru Kelas / Pengampu', 220, 520);
+
+            // Signature Line Teacher
+            ctx.strokeStyle = '#9ca3af';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(120, 600);
+            ctx.lineTo(320, 600);
+            ctx.stroke();
+
+            ctx.fillStyle = '#111827';
+            ctx.font = 'bold 16px "Fredoka", sans-serif';
+            ctx.fillText(teacherName, 220, 620);
+            ctx.fillStyle = '#4b5563';
+            ctx.font = '13px "Fredoka", sans-serif';
+            ctx.fillText(teacherNIP.startsWith('NIP') ? teacherNIP : `NIP. ${teacherNIP}`, 220, 640);
+
+            // Principal (Right)
+            ctx.textAlign = 'center';
+
+            // Signature Line Principal
+            ctx.beginPath();
+            ctx.moveTo(canvas.width - 320, 600);
+            ctx.lineTo(canvas.width - 120, 600);
+            ctx.stroke();
+
+            ctx.fillStyle = '#111827';
+            ctx.font = 'bold 16px "Fredoka", sans-serif';
+            ctx.fillText(principalName, canvas.width - 220, 620);
+            ctx.fillStyle = '#4b5563';
+            ctx.font = '13px "Fredoka", sans-serif';
+            ctx.fillText(principalNIP.startsWith('NIP') ? principalNIP : `NIP. ${principalNIP}`, canvas.width - 220, 640);
+            ctx.fillText('Kepala Sekolah', canvas.width - 220, 520);
+        }
+
+        // Download Certificate Image
+        function downloadCertificate() {
+            sound.playClick();
+            const canvas = document.getElementById('certCanvas');
+            let activeIdx = 0;
+            if (playerMode === 2) {
+                activeIdx = parseInt(document.getElementById('certPlayerSelect').value) || 0;
+            }
+            const pName = players[activeIdx] ? players[activeIdx].name : 'Siswa';
+            const cleanName = pName.replace(/[^a-zA-Z0-9]/g, '_');
+
+            const link = document.createElement('a');
+            link.download = `Sertifikat_${cleanName}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }
+
+        // Print Certificate
+        function printCertificate() {
+            sound.playClick();
+            const canvas = document.getElementById('certCanvas');
+            const dataUrl = canvas.toDataURL('image/png');
+
+            const windowContent = `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Cetak Sertifikat</title>
+                    <style>
+                        body { margin: 0; display: flex; justify-content: center; items-center: center; min-height: 100vh; background: #fff; }
+                        img { max-width: 100%; height: auto; }
+                        @page { size: landscape; margin: 0; }
+                    </style>
+                </head>
+                <body>
+                    <img src="${dataUrl}" onload="window.print(); window.close();" />
+                </body>
+                </html>
+            `;
+
+            const printWin = window.open('', '_blank');
+            printWin.document.open();
+            printWin.document.write(windowContent);
+            printWin.document.close();
+        }
+
+        function chooseMode(mode) {
+            sound.playClick();
+            playerMode = mode;
+            document.getElementById('welcomeCard').classList.add('hidden');
+            document.getElementById('setupCard').classList.remove('hidden');
+
+            const inputsDiv = document.getElementById('playerInputs');
+            inputsDiv.innerHTML = '';
+
+            for (let i = 1; i <= mode; i++) {
+                inputsDiv.innerHTML += `
+                    <div class="text-left">
+                        <label class="block font-bold text-gray-700 mb-1">Nama Pemain ${i}:</label>
+                        <input type="text" id="playerInput${i}" value="Pemain ${i}" 
+                            class="w-full px-4 py-3 rounded-xl border-2 border-green-400 focus:border-green-600 focus:outline-none font-bold text-gray-800 text-lg shadow-sm">
+                    </div>
+                `;
+            }
+        }
+
+        function showWelcome() {
+            sound.playClick();
+            document.getElementById('setupCard').classList.add('hidden');
+            document.getElementById('welcomeCard').classList.remove('hidden');
+        }
+
+        function startGame() {
+            sound.playClick();
+            players = [];
+            for (let i = 1; i <= playerMode; i++) {
+                const nameInput = document.getElementById(`playerInput${i}`).value.trim();
+                players.push({
+                    name: nameInput || `Pemain ${i}`,
+                    score: 0
+                });
+            }
+
+            // Shuffle questions for fresh gameplay
+            questions = [...questionBank].sort(() => Math.random() - 0.5);
+
+            currentTurnIndex = 0;
+            currentQuestionIdx = 0;
+            secondsElapsed = 0;
+
+            document.getElementById('setupCard').classList.add('hidden');
+            document.getElementById('gameContainer').classList.remove('hidden');
+
+            startTimer();
+            renderQuestion();
+        }
+
+        function startTimer() {
+            clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                secondsElapsed++;
+                const mins = String(Math.floor(secondsElapsed / 60)).padStart(2, '0');
+                const secs = String(secondsElapsed % 60).padStart(2, '0');
+                document.getElementById('timer').innerText = `${mins}:${secs}`;
+            }, 1000);
+        }
+
+        function updateHUD() {
+            // Turn Banner
+            const turnBanner = document.getElementById('turnBanner');
+            if (playerMode === 2) {
+                turnBanner.classList.remove('hidden');
+                document.getElementById('activePlayerName').innerText = players[currentTurnIndex].name;
+            } else {
+                turnBanner.classList.add('hidden');
+            }
+
+            // Score Board
+            const scoreBoard = document.getElementById('scoreBoard');
+            if (playerMode === 1) {
+                scoreBoard.innerHTML = `
+                    <div class="text-xs text-green-700 font-bold">⭐ SKOR</div>
+                    <div class="text-xl md:text-2xl font-black text-green-800">${players[0].score}</div>
+                `;
+            } else {
+                scoreBoard.innerHTML = `
+                    <div class="text-xs text-green-700 font-bold">⭐ SKOR</div>
+                    <div class="text-xs md:text-sm font-bold text-gray-800 truncate">
+                        P1: <span class="text-green-700 font-black">${players[0].score}</span> | P2: <span class="text-amber-700 font-black">${players[1].score}</span>
+                    </div>
+                `;
+            }
+
+            // Question counter
+            document.getElementById('questionNumber').innerText = currentQuestionIdx + 1;
+            document.getElementById('totalQuestions').innerText = questions.length;
+        }
+
+        function renderQuestion() {
+            updateHUD();
+
+            const q = questions[currentQuestionIdx];
+            document.getElementById('gameTitle').innerText = q.title;
+            const content = document.getElementById('gameContent');
+            const feedback = document.getElementById('feedback');
+            const nextBtn = document.getElementById('nextBtn');
+
+            feedback.className = 'hidden p-4 rounded-2xl font-bold text-center text-lg mb-4 transition-all';
+            nextBtn.classList.add('hidden');
+            content.innerHTML = '';
+
+            if (q.type === 'mcq') {
+                renderMCQ(q, content);
+            } else if (q.type === 'dragdrop') {
+                renderDragDrop(q, content);
+            } else if (q.type === 'matching') {
+                renderMatching(q, content);
+            }
+        }
+
+        // --- Render Multiple Choice ---
+        function renderMCQ(q, container) {
+            let html = `
+                <p class="text-lg md:text-xl font-bold text-gray-800 mb-6">${q.prompt}</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            `;
+
+            q.options.forEach((opt, idx) => {
+                html += `
+                    <button onclick="checkMCQ(${idx})" id="mcq-btn-${idx}" 
+                        class="mcq-option bg-white hover:bg-green-50 border-3 border-gray-300 hover:border-green-500 rounded-2xl p-4 text-left font-bold text-base md:text-lg text-gray-800 shadow-sm transition flex items-center space-x-3">
+                        <span class="w-8 h-8 rounded-full bg-green-200 text-green-900 flex items-center justify-center font-black text-sm flex-shrink-0">
+                            ${String.fromCharCode(65 + idx)}
+                        </span>
+                        <span>${opt}</span>
+                    </button>
+                `;
+            });
+
+            html += `</div>`;
+            container.innerHTML = html;
+        }
+
+        function checkMCQ(selectedIndex) {
+            sound.playClick();
+            const q = questions[currentQuestionIdx];
+            const buttons = document.querySelectorAll('.mcq-option');
+            buttons.forEach(btn => btn.disabled = true);
+
+            const isCorrect = (selectedIndex === q.answer);
+            const selectedBtn = document.getElementById(`mcq-btn-${selectedIndex}`);
+            const feedback = document.getElementById('feedback');
+
+            if (isCorrect) {
+                sound.playCorrect();
+                selectedBtn.classList.remove('bg-white', 'border-gray-300');
+                selectedBtn.classList.add('bg-green-200', 'border-green-600', 'text-green-900');
+                players[currentTurnIndex].score += 100;
+
+                feedback.innerHTML = `🎉 <b>Benar! +100 Poin</b><br><span class="text-sm font-normal">${q.explanation}</span>`;
+                feedback.className = 'p-4 rounded-2xl font-bold text-center text-lg mb-4 bg-green-100 text-green-900 border-2 border-green-400 block';
+            } else {
+                sound.playWrong();
+                selectedBtn.classList.remove('bg-white', 'border-gray-300');
+                selectedBtn.classList.add('bg-red-200', 'border-red-600', 'text-red-900');
+
+                // Highlight correct
+                const correctBtn = document.getElementById(`mcq-btn-${q.answer}`);
+                correctBtn.classList.remove('bg-white', 'border-gray-300');
+                correctBtn.classList.add('bg-green-100', 'border-green-500');
+
+                feedback.innerHTML = `❌ <b>Kurang Tepat!</b><br><span class="text-sm font-normal">${q.explanation}</span>`;
+                feedback.className = 'p-4 rounded-2xl font-bold text-center text-lg mb-4 bg-red-100 text-red-900 border-2 border-red-400 block';
+            }
+
+            updateHUD();
+            document.getElementById('nextBtn').classList.remove('hidden');
+        }
+
+        // --- Render Drag and Drop ---
+        function renderDragDrop(q, container) {
+            dragSelectedItem = null;
+            let html = `
+                <p class="text-base md:text-lg font-bold text-gray-800 mb-2">${q.prompt}</p>
+                <p class="text-xs md:text-sm text-green-700 font-bold mb-4">💡 Tips: Klik/sentuh item lalu klik kotak tujuan (atau drag & drop pada laptop)!</p>
+                
+                <!-- Unplaced Items Pool -->
+                <div class="bg-amber-50 border-2 border-amber-300 rounded-2xl p-3 mb-6 min-h-[70px]">
+                    <div class="text-xs font-bold text-amber-800 mb-2">Pilihan Tumbuhan / Metode:</div>
+                    <div id="dragItemsPool" class="flex flex-wrap gap-2">
+            `;
+
+            const shuffledItems = [...q.items].sort(() => Math.random() - 0.5);
+
+            shuffledItems.forEach(item => {
+                html += `
+                    <div id="drag-item-${item.id}" 
+                         draggable="true" 
+                         ondragstart="onDragStart(event, '${item.id}')"
+                         onclick="onItemClick('${item.id}')"
+                         class="draggable-item bg-white border-2 border-amber-400 text-amber-900 font-bold px-3 py-2 rounded-xl text-sm md:text-base shadow-sm hover:shadow cursor-pointer flex items-center space-x-1">
+                        <span>🌱</span>
+                        <span>${item.text}</span>
+                    </div>
+                `;
+            });
+
+            html += `
+                    </div>
+                </div>
+
+                <!-- Category Target Buckets -->
+                <div class="grid grid-cols-1 md:grid-cols-${q.categories.length} gap-3">
+            `;
+
+            q.categories.forEach(cat => {
+                html += `
+                    <div ondragover="onDragOver(event)" 
+                         ondragleave="onDragLeave(event)" 
+                         ondrop="onDrop(event, '${cat.id}')"
+                         onclick="onZoneClick('${cat.id}')"
+                         id="drop-zone-${cat.id}"
+                         class="drop-zone bg-white border-2 border-dashed border-green-400 rounded-2xl p-3 flex flex-col justify-start space-y-2 cursor-pointer">
+                        <div class="font-black text-green-800 text-center border-b border-green-200 pb-1 text-sm md:text-base">
+                            ${cat.title}
+                        </div>
+                        <div class="dropped-items flex flex-col space-y-2"></div>
+                    </div>
+                `;
+            });
+
+            html += `</div>
+                <div class="mt-4 flex justify-center">
+                    <button id="checkDragBtn" onclick="checkDragDrop()" class="btn-orange text-white font-black py-2 px-6 rounded-xl text-base">
+                        🔒 Periksa Jawaban
+                    </button>
+                </div>
+            `;
+
+            container.innerHTML = html;
+        }
+
+        function onItemClick(itemId) {
+            sound.playClick();
+            const itemEl = document.getElementById(`drag-item-${itemId}`);
+
+            if (dragSelectedItem === itemId) {
+                // Deselect
+                dragSelectedItem = null;
+                itemEl.classList.remove('selected');
+            } else {
+                // Select
+                document.querySelectorAll('.draggable-item').forEach(el => el.classList.remove('selected'));
+                dragSelectedItem = itemId;
+                itemEl.classList.add('selected');
+            }
+        }
+
+        function onZoneClick(categoryId) {
+            if (!dragSelectedItem) return;
+            moveItemToZone(dragSelectedItem, categoryId);
+            dragSelectedItem = null;
+        }
+
+        function onDragStart(event, itemId) {
+            event.dataTransfer.setData('text/plain', itemId);
+        }
+
+        function onDragOver(event) {
+            event.preventDefault();
+            event.currentTarget.classList.add('drag-over');
+        }
+
+        function onDragLeave(event) {
+            event.currentTarget.classList.remove('drag-over');
+        }
+
+        function onDrop(event, categoryId) {
+            event.preventDefault();
+            event.currentTarget.classList.remove('drag-over');
+            const itemId = event.dataTransfer.getData('text/plain');
+            if (itemId) {
+                moveItemToZone(itemId, categoryId);
+            }
+        }
+
+        function moveItemToZone(itemId, categoryId) {
+            sound.playClick();
+            const itemEl = document.getElementById(`drag-item-${itemId}`);
+            const zoneEl = document.querySelector(`#drop-zone-${categoryId} .dropped-items`);
+
+            if (itemEl && zoneEl) {
+                itemEl.classList.remove('selected');
+                zoneEl.appendChild(itemEl);
+            }
+        }
+
+        function checkDragDrop() {
+            const q = questions[currentQuestionIdx];
+            let totalItems = q.items.length;
+            let correctCount = 0;
+
+            q.categories.forEach(cat => {
+                const zone = document.getElementById(`drop-zone-${cat.id}`);
+                const placedItems = zone.querySelectorAll('.draggable-item');
+
+                placedItems.forEach(itemNode => {
+                    const id = itemNode.id.replace('drag-item-', '');
+                    const originalItem = q.items.find(i => i.id === id);
+
+                    if (originalItem && originalItem.category === cat.id) {
+                        correctCount++;
+                        itemNode.classList.remove('border-amber-400', 'bg-white');
+                        itemNode.classList.add('bg-green-200', 'border-green-600', 'text-green-900');
+                    } else {
+                        itemNode.classList.remove('border-amber-400', 'bg-white');
+                        itemNode.classList.add('bg-red-200', 'border-red-600', 'text-red-900');
+                    }
+                });
+            });
+
+            document.getElementById('checkDragBtn').disabled = true;
+            document.getElementById('checkDragBtn').classList.add('opacity-50', 'cursor-not-allowed');
+
+            const feedback = document.getElementById('feedback');
+            const scoreGained = Math.round((correctCount / totalItems) * 100);
+
+            players[currentTurnIndex].score += scoreGained;
+
+            if (correctCount === totalItems) {
+                sound.playCorrect();
+                feedback.innerHTML = `🎉 <b>Luar Biasa! Semua Tepat! +${scoreGained} Poin</b>`;
+                feedback.className = 'p-4 rounded-2xl font-bold text-center text-lg mb-4 bg-green-100 text-green-900 border-2 border-green-400 block';
+            } else {
+                sound.playWrong();
+                feedback.innerHTML = `⚠️ <b>Berhasil mencocokkan ${correctCount} dari ${totalItems}! +${scoreGained} Poin</b>`;
+                feedback.className = 'p-4 rounded-2xl font-bold text-center text-lg mb-4 bg-amber-100 text-amber-900 border-2 border-amber-400 block';
+            }
+
+            updateHUD();
+            document.getElementById('nextBtn').classList.remove('hidden');
+        }
+
+        // --- Render Matching Pairs ---
+        function renderMatching(q, container) {
+            matchSelectedLeft = null;
+            currentMatchedCount = 0;
+
+            const leftItems = q.pairs.map((p, idx) => ({ id: idx, text: p.left }));
+            const rightItems = q.pairs.map((p, idx) => ({ id: idx, text: p.right })).sort(() => Math.random() - 0.5);
+
+            let html = `
+                <p class="text-base md:text-lg font-bold text-gray-800 mb-4">${q.prompt}</p>
+                <div class="grid grid-cols-2 gap-3 md:gap-6">
+                    <div class="space-y-3" id="matchLeftCol">
+            `;
+
+            leftItems.forEach(item => {
+                html += `
+                    <div id="match-left-${item.id}" onclick="selectMatchLeft(${item.id})"
+                         class="match-card bg-white border-2 border-blue-400 rounded-2xl p-3 text-center font-bold text-sm md:text-base text-blue-900 shadow-sm">
+                        ${item.text}
+                    </div>
+                `;
+            });
+
+            html += `</div><div class="space-y-3" id="matchRightCol">`;
+
+            rightItems.forEach(item => {
+                html += `
+                    <div id="match-right-${item.id}" onclick="selectMatchRight(${item.id})"
+                         class="match-card bg-white border-2 border-purple-400 rounded-2xl p-3 text-center font-bold text-sm md:text-base text-purple-900 shadow-sm">
+                        ${item.text}
+                    </div>
+                `;
+            });
+
+            html += `</div></div>`;
+            container.innerHTML = html;
+        }
+
+        function selectMatchLeft(id) {
+            sound.playClick();
+            document.querySelectorAll('#matchLeftCol .match-card').forEach(el => el.classList.remove('selected'));
+            const el = document.getElementById(`match-left-${id}`);
+            if (el.classList.contains('matched')) return;
+
+            matchSelectedLeft = id;
+            el.classList.add('selected');
+        }
+
+        function selectMatchRight(rightId) {
+            if (matchSelectedLeft === null) return;
+
+            sound.playClick();
+            const leftEl = document.getElementById(`match-left-${matchSelectedLeft}`);
+            const rightEl = document.getElementById(`match-right-${rightId}`);
+
+            if (rightEl.classList.contains('matched')) return;
+
+            const q = questions[currentQuestionIdx];
+
+            if (matchSelectedLeft === rightId) {
+                // Correct match!
+                sound.playCorrect();
+                leftEl.classList.remove('selected');
+                leftEl.classList.add('matched');
+                rightEl.classList.add('matched');
+
+                matchSelectedLeft = null;
+                currentMatchedCount++;
+
+                if (currentMatchedCount === q.pairs.length) {
+                    players[currentTurnIndex].score += 100;
+                    const feedback = document.getElementById('feedback');
+                    feedback.innerHTML = `🎉 <b>Hebat! Semua Pasangan Cocok! +100 Poin</b>`;
+                    feedback.className = 'p-4 rounded-2xl font-bold text-center text-lg mb-4 bg-green-100 text-green-900 border-2 border-green-400 block';
+                    
+                    updateHUD();
+                    document.getElementById('nextBtn').classList.remove('hidden');
+                }
+            } else {
+                // Wrong match!
+                sound.playWrong();
+                leftEl.classList.add('wrong');
+                rightEl.classList.add('wrong');
+
+                setTimeout(() => {
+                    leftEl.classList.remove('wrong', 'selected');
+                    rightEl.classList.remove('wrong');
+                    matchSelectedLeft = null;
+                }, 500);
+            }
+        }
+
+        function nextQuestion() {
+            sound.playClick();
+            currentQuestionIdx++;
+
+            // Switch turn if 2-player mode
+            if (playerMode === 2) {
+                currentTurnIndex = (currentTurnIndex + 1) % 2;
+            }
+
+            if (currentQuestionIdx < questions.length) {
+                renderQuestion();
+            } else {
+                endGame();
+            }
+        }
+
+        function endGame() {
+            clearInterval(timerInterval);
+            sound.playWin();
+
+            document.getElementById('gameContainer').classList.add('hidden');
+            document.getElementById('resultCard').classList.remove('hidden');
+
+            const mins = String(Math.floor(secondsElapsed / 60)).padStart(2, '0');
+            const secs = String(secondsElapsed % 60).padStart(2, '0');
+            document.getElementById('finalTime').innerText = `${mins}:${secs}`;
+
+            const winnerText = document.getElementById('winnerText');
+            const playerComparison = document.getElementById('playerComparison');
+
+            if (playerMode === 1) {
+                document.getElementById('finalScore').innerText = players[0].score;
+                winnerText.innerHTML = `Selamat, ${players[0].name}! 🌟`;
+                playerComparison.classList.add('hidden');
+            } else {
+                // 2 Players
+                const p1 = players[0];
+                const p2 = players[1];
+
+                document.getElementById('finalScore').innerText = `${p1.score} vs ${p2.score}`;
+
+                playerComparison.classList.remove('hidden');
+                playerComparison.innerHTML = `
+                    <div class="bg-white p-3 rounded-xl border border-gray-200 flex justify-between items-center font-bold">
+                        <span>👤 ${p1.name}</span>
+                        <span class="text-green-700">${p1.score} Poin</span>
+                    </div>
+                    <div class="bg-white p-3 rounded-xl border border-gray-200 flex justify-between items-center font-bold">
+                        <span>👥 ${p2.name}</span>
+                        <span class="text-amber-700">${p2.score} Poin</span>
+                    </div>
+                `;
+
+                if (p1.score > p2.score) {
+                    winnerText.innerHTML = `👑 ${p1.name} Menang! 🎉`;
+                } else if (p2.score > p1.score) {
+                    winnerText.innerHTML = `👑 ${p2.name} Menang! 🎉`;
+                } else {
+                    winnerText.innerHTML = `🤝 Hasil Seri! Keduanya Hebat! 🎉`;
+                }
+            }
+
+            launchConfetti();
+        }
+
+        function restartGame() {
+            sound.playClick();
+            document.getElementById('resultCard').classList.add('hidden');
+            document.getElementById('welcomeCard').classList.remove('hidden');
+        }
+
+        // Lightweight Confetti Animation Engine
+        function launchConfetti() {
+            const canvas = document.getElementById('confettiCanvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+
+            const particles = [];
+            const colors = ['#f43f5e', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6'];
+
+            for (let i = 0; i < 80; i++) {
+                particles.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height - canvas.height,
+                    size: Math.random() * 8 + 4,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    vy: Math.random() * 3 + 2,
+                    vx: Math.random() * 2 - 1,
+                    rot: Math.random() * 360
+                });
+            }
+
+            let animationFrame;
+            function render() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                let active = false;
+
+                particles.forEach(p => {
+                    p.y += p.vy;
+                    p.x += p.vx;
+                    p.rot += 2;
+
+                    ctx.save();
+                    ctx.translate(p.x, p.y);
+                    ctx.rotate((p.rot * Math.PI) / 180);
+                    ctx.fillStyle = p.color;
+                    ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
+                    ctx.restore();
+
+                    if (p.y < canvas.height) active = true;
+                });
+
+                if (active) {
+                    animationFrame = requestAnimationFrame(render);
+                } else {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                }
+            }
+
+            render();
+        }
+
+        function initBackgroundLeaves() {
+            const container = document.getElementById('leavesContainer');
+            if (!container) return;
+            container.innerHTML = '';
+            const leafIcons = ['🌱', '🍃', '🌿', '☘️', '🌸', '🍂'];
+            for (let i = 0; i < 18; i++) {
+                const leaf = document.createElement('div');
+                leaf.className = 'leaf';
+                leaf.innerText = leafIcons[Math.floor(Math.random() * leafIcons.length)];
+                leaf.style.left = Math.random() * 100 + 'vw';
+                leaf.style.animationDuration = (8 + Math.random() * 10) + 's';
+                leaf.style.animationDelay = (Math.random() * 5) + 's';
+                leaf.style.fontSize = (1.5 + Math.random() * 1.5) + 'rem';
+                container.appendChild(leaf);
+            }
+        }
+
+        // Window Load Initialization
+        window.onload = function() {
+            initBackgroundLeaves();
+        };
+    </script>
+</body>
+</html>
